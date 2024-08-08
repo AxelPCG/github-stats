@@ -26,37 +26,6 @@ def generate_output_folder() -> None:
 # Individual Image Generation Functions
 ################################################################################
 
-async def total_commits(s: Stats) -> int:
-    """
-    Get the total number of commits
-    """
-    return sum(repo.get("commits", 0) for repo in await s.repos)
-
-async def total_pull_requests(s: Stats) -> int:
-    """
-    Get the total number of pull requests
-    """
-    query = """
-    {
-      user(login: "%s") {
-        pullRequests(first: 100) {
-          totalCount
-        }
-      }
-    }
-    """ % (await s.user)
-    async with s.session.post(
-        "https://api.github.com/graphql",
-        headers=s.headers,
-        json={"query": query},
-    ) as resp:
-        if resp.status != 200:
-            raise RuntimeError(
-                f"Failed to fetch pull requests data: {resp.status} {await resp.text()}"
-            )
-        data = await resp.json()
-    return data["data"]["user"]["pullRequests"]["totalCount"]
-
 
 async def generate_overview(s: Stats) -> None:
     """
@@ -70,8 +39,8 @@ async def generate_overview(s: Stats) -> None:
     output = re.sub("{{ stars }}", f"{await s.stargazers:,}", output)
     output = re.sub("{{ forks }}", f"{await s.forks:,}", output)
     output = re.sub("{{ contributions }}", f"{await s.total_contributions:,}", output)
-    output = re.sub("{{ commits }}", f"{await total_commits(s):,}", output)
-    output = re.sub("{{ prs }}", f"{await total_pull_requests(s):,}", output)
+    changed = (await s.lines_changed)[0] + (await s.lines_changed)[1]
+    output = re.sub("{{ lines_changed }}", f"{changed:,}", output)
     output = re.sub("{{ views }}", f"{await s.views:,}", output)
     output = re.sub("{{ repos }}", f"{len(await s.repos):,}", output)
 
