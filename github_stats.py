@@ -519,7 +519,38 @@ Languages:
 
         self._views = total
         return total
+        
+    async def total_commits(self) -> int:
+        """
+        Get the total number of commits made by the user.
+        """
+        query = """
+        query {
+          user(login: "%s") {
+            contributionsCollection {
+              totalCommitContributions
+            }
+          }
+        }
+        """ % self.username
+        response = await self.queries.query(query)
+        return response["data"]["user"]["contributionsCollection"]["totalCommitContributions"]
 
+    async def total_prs(self) -> int:
+        """
+        Get the total number of pull requests made by the user.
+        """
+        query = """
+        query {
+          user(login: "%s") {
+            pullRequests {
+              totalCount
+            }
+          }
+        }
+        """ % self.username
+        response = await self.queries.query(query)
+        return response["data"]["user"]["pullRequests"]["totalCount"]
 
 ###############################################################################
 # Main Function
